@@ -49,78 +49,55 @@ HTML_TEMPLATE = """
             position: fixed;
             top: 20px;
             right: 20px;
-            width: 300px;
+            width: 200px;
             background: rgba(255, 255, 255, 0.95);
             border: 3px solid #8B4513;
             border-radius: 15px;
-            padding: 30px;
+            padding: 20px;
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(8px);
             z-index: 20;
+            text-align: center;
         }
         .sidebar-title {
-            font-size: 24px;
+            font-size: 18px;
             font-weight: bold;
             color: #8B4513;
-            margin-bottom: 20px;
-            text-align: center;
+            margin-bottom: 15px;
             border-bottom: 2px solid #8B4513;
-            padding-bottom: 12px;
+            padding-bottom: 8px;
         }
-        .status-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 18px;
-            font-size: 20px;
-        }
-        .status-label {
-            color: #555;
+        .water-level {
+            font-size: 32px;
+            font-weight: bold;
+            color: #8B4513;
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-weight: bold;
+            justify-content: center;
+            gap: 15px;
         }
-        .status-label i {
-            font-size: 24px;
-            width: 30px;
-            text-align: center;
+        .water-level.happy {
+            color: #007bff;
         }
-        .status-value {
-            font-weight: bold;
-            font-size: 22px;
+        .water-level.angry {
+            color: #dc3545;
         }
-        .status-green .status-value { color: #28a745; }
-        .status-yellow .status-value { color: #ffc107; }
-        .status-red .status-value { color: #dc3545; }
-        .status-unknown .status-value { color: #6c757d; }
-        .progress-mini {
-            width: 100%;
-            height: 10px;
-            background: #e9ecef;
-            border-radius: 5px;
-            overflow: hidden;
-            margin-top: 8px;
+        .emotion-mark {
+            font-size: 28px;
+            animation: pulse 2s infinite;
+            color: #8B4513;
         }
-        .progress-mini-fill {
-            height: 100%;
-            transition: width 0.5s ease;
+        .emotion-mark.happy {
+            color: #007bff;
         }
-        .connection-status-mini {
-            font-size: 16px;
-            text-align: center;
-            margin-top: 15px;
-            padding: 8px;
-            border-radius: 8px;
-            font-weight: bold;
+        .emotion-mark.angry {
+            color: #dc3545;
         }
-        .connection-status-mini.connected {
-            background: #d4edda;
-            color: #155724;
-        }
-        .connection-status-mini.disconnected {
-            background: #f8d7da;
-            color: #721c24;
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
         }
         
         /* キャラクター表示エリア */
@@ -188,26 +165,6 @@ HTML_TEMPLATE = """
             font-weight: bold;
         }
         
-        /* 更新ボタン */
-        .update-button {
-            position: fixed;
-            bottom: 300px;
-            right: 50px;
-            background: rgba(139, 69, 19, 0.9);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 18px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            font-weight: bold;
-        }
-        .update-button:hover {
-            background: rgba(139, 69, 19, 1);
-            transform: scale(1.05);
-        }
     </style>
     <script>
         let lastUpdateTime = new Date('{{ last_update or "1970-01-01" }}').getTime();
@@ -216,11 +173,14 @@ HTML_TEMPLATE = """
             fetch('/api/data')
                 .then(response => response.json())
                 .then(data => {
-                    // サイドバーの更新
+                    // 水分量の更新
                     document.getElementById('percentage').textContent = data.percentage + '%';
-                    document.getElementById('raw-value').textContent = data.raw_value;
-                    document.getElementById('status-text').textContent = getStatusText(data.status);
-                    document.getElementById('last-update').textContent = data.last_update || 'データなし';
+                    
+                    // 感情マークの更新
+                    updateEmotionMark(data.character_face);
+                    
+                    // 色の更新
+                    updateColors(data.percentage, data.character_face);
                     
                     // 台詞ボックスの更新
                     document.getElementById('dialogue-text').textContent = data.character_message || 'お疲れ様！';
@@ -228,17 +188,9 @@ HTML_TEMPLATE = """
                     // キャラクター画像のエフェクト更新
                     updateCharacterEffect(data.character_face || data.status);
                     
-                    // 接続状態の更新
-                    updateConnectionStatusMini(data.last_update);
-                    
                     // ステータスに応じてクラスを更新
                     const sidebar = document.getElementById('sidebar');
                     sidebar.className = 'sidebar status-' + data.status;
-                    
-                    // プログレスバーを更新
-                    const progressFill = document.getElementById('progress-mini-fill');
-                    progressFill.style.width = data.percentage + '%';
-                    progressFill.className = 'progress-mini-fill status-' + data.status;
                 });
         }
         
@@ -285,34 +237,46 @@ HTML_TEMPLATE = """
             characterImg.src = imageSrc;
         }
         
-        function updateConnectionStatusMini(lastUpdate) {
-            const connectionStatus = document.getElementById('connection-status-mini');
+        
+        function updateEmotionMark(faceType) {
+            const emotionMark = document.getElementById('emotion-mark');
             
-            if (!lastUpdate) {
-                connectionStatus.className = 'connection-status-mini disconnected';
-                connectionStatus.textContent = '⚠️ データ待機中';
-                return;
-            }
-            
-            const updateTime = new Date(lastUpdate).getTime();
-            const now = new Date().getTime();
-            const timeDiff = (now - updateTime) / 1000; // 秒単位
-            
-            if (timeDiff > 60) { // 1分以上更新がない
-                connectionStatus.className = 'connection-status-mini disconnected';
-                connectionStatus.textContent = `⚠️ 接続切れ (${Math.floor(timeDiff/60)}分前)`;
-            } else {
-                connectionStatus.className = 'connection-status-mini connected';
-                connectionStatus.textContent = '✅ 接続中';
+            switch(faceType) {
+                case 'yousei1':
+                    emotionMark.innerHTML = '<i class="fas fa-smile"></i>';
+                    break;
+                case 'yousei2':
+                    emotionMark.innerHTML = '<i class="fas fa-meh"></i>';
+                    break;
+                case 'yousei4':
+                    emotionMark.innerHTML = '<i class="fas fa-laugh"></i>';
+                    break;
+                case 'yousei5':
+                    emotionMark.innerHTML = '<i class="fas fa-angry"></i>';
+                    break;
+                default:
+                    emotionMark.innerHTML = '<i class="fas fa-smile"></i>';
+                    break;
             }
         }
         
-        function getStatusText(status) {
-            switch(status) {
-                case 'green': return '良好';
-                case 'yellow': return '適度';
-                case 'red': return '不足';
-                default: return '不明';
+        function updateColors(percentage, faceType) {
+            const waterLevel = document.getElementById('water-level');
+            const emotionMark = document.getElementById('emotion-mark');
+            
+            // クラスをリセット
+            waterLevel.classList.remove('happy', 'angry');
+            emotionMark.classList.remove('happy', 'angry');
+            
+            // 90-100%または喜びの時は青
+            if ((percentage >= 90 && percentage <= 100) || faceType === 'yousei4') {
+                waterLevel.classList.add('happy');
+                emotionMark.classList.add('happy');
+            }
+            // 開始時以外の0%または怒りの時は赤
+            else if ((percentage === 0 && faceType === 'yousei5') || faceType === 'yousei5') {
+                waterLevel.classList.add('angry');
+                emotionMark.classList.add('angry');
             }
         }
         
@@ -322,76 +286,36 @@ HTML_TEMPLATE = """
         // ページ読み込み時に1回実行
         window.onload = function() {
             refreshData();
-            updateConnectionStatusMini('{{ last_update }}');
         };
     </script>
 </head>
 <body>
     <!-- サイドバー（右上） -->
     <div id="sidebar" class="sidebar status-{{ status }}">
-        <div class="sidebar-title">水分データ</div>
+        <div class="sidebar-title">好感度</div>
         
-        <div class="status-item">
-            <span class="status-label">
-                <i class="fas fa-tint"></i>
-                水分レベル
-            </span>
-            <span id="percentage" class="status-value">{{ percentage }}%</span>
-        </div>
-        
-        <div class="progress-mini">
-            <div id="progress-mini-fill" class="progress-mini-fill status-{{ status }}" 
-                 style="width: {{ percentage }}%"></div>
-        </div>
-        
-        <div class="status-item">
-            <span class="status-label">
-                <i class="fas fa-chart-line"></i>
-                センサー値
-            </span>
-            <span id="raw-value" class="status-value">{{ raw_value }}</span>
-        </div>
-        
-        <div class="status-item">
-            <span class="status-label">
-                <i class="fas fa-heart"></i>
-                ステータス
-            </span>
-            <span id="status-text" class="status-value">
-                {% if status == 'green' %}良好
-                {% elif status == 'yellow' %}適度
-                {% elif status == 'red' %}不足
-                {% else %}不明{% endif %}
-            </span>
-        </div>
-        
-        <div class="status-item">
-            <span class="status-label">
-                <i class="fas fa-clock"></i>
-                最終更新
-            </span>
-            <span id="last-update" class="status-value" style="font-size: 16px;">{{ last_update or 'データなし' }}</span>
-        </div>
-        
-        <div id="connection-status-mini" class="connection-status-mini connected">
-            ✅ 接続中
+        <div id="water-level" class="water-level">
+            <span id="percentage">{{ percentage }}%</span>
+            <div id="emotion-mark" class="emotion-mark">
+                {% if character_face == 'yousei1' %}<i class="fas fa-smile"></i>
+                {% elif character_face == 'yousei2' %}<i class="fas fa-meh"></i>
+                {% elif character_face == 'yousei4' %}<i class="fas fa-laugh"></i>
+                {% elif character_face == 'yousei5' %}<i class="fas fa-angry"></i>
+                {% else %}<i class="fas fa-smile"></i>{% endif %}
+            </div>
         </div>
     </div>
     
     <!-- キャラクター表示エリア -->
     <div class="character-area">
-        <img id="character-image" src="/img/yousei1.png" alt="植物妖精" class="character-image {{ character_face }}">
+        <img id="character-image" src="/img/yousei1.png" alt="エモたん" class="character-image {{ character_face }}">
     </div>
     
-    <!-- 更新ボタン -->
-    <button class="update-button" onclick="refreshData()">
-        <i class="fas fa-sync-alt"></i> 更新
-    </button>
     
     <!-- 台詞ボックス -->
     <div class="dialogue-container">
         <div class="dialogue-box">
-            <div class="dialogue-name">植物妖精からのメッセージ</div>
+            <div class="dialogue-name">エモたんからのメッセージ</div>
             <div id="dialogue-text" class="dialogue-text">
                 {{ character_message or 'データを受信中だよ〜！' }}
             </div>
