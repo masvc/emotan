@@ -19,7 +19,7 @@ current_data = {
     'character_face': 'normal'
 }
 
-# HTML テンプレート（ビジュアルノベル風・音声機能付き）
+# HTML テンプレート（ビジュアルノベル風・音声オンオフ機能付き）
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="ja">
@@ -100,6 +100,46 @@ HTML_TEMPLATE = """
             100% { transform: scale(1); }
         }
         
+        /* 音声オンオフボタン */
+        .audio-toggle {
+            margin-top: 15px;
+            padding: 10px;
+            border-top: 2px solid #8B4513;
+            text-align: center;
+        }
+        
+        .audio-toggle-btn {
+            background: #8B4513;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            width: 100%;
+        }
+        
+        .audio-toggle-btn:hover {
+            background: #654321;
+            transform: scale(1.05);
+        }
+        
+        .audio-toggle-btn.enabled {
+            background: #28a745;
+        }
+        
+        .audio-toggle-btn.enabled:hover {
+            background: #218838;
+        }
+        
+        .audio-status {
+            font-size: 11px;
+            margin-top: 5px;
+            color: #666;
+        }
+        
         /* キャラクター表示エリア */
         .character-area {
             position: fixed;
@@ -172,6 +212,39 @@ HTML_TEMPLATE = """
     <script>
         let lastUpdateTime = new Date('{{ last_update or "1970-01-01" }}').getTime();
         let lastFaceType = null; // 前回の状態を記録（音声用）
+        let audioEnabled = false; // 音声の有効/無効
+        let userInteracted = false; // ユーザーが操作したかのフラグ
+        
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            userInteracted = true; // ユーザーが操作した
+            
+            const btn = document.getElementById('audio-toggle-btn');
+            const status = document.getElementById('audio-status');
+            
+            if (audioEnabled) {
+                btn.textContent = '🔊 音声ON';
+                btn.classList.add('enabled');
+                status.textContent = '状態変化時に音声再生';
+                
+                // テスト音声を再生
+                playTestSound();
+            } else {
+                btn.textContent = '🔇 音声OFF';
+                btn.classList.remove('enabled');
+                status.textContent = 'クリックで音声ON';
+            }
+        }
+        
+        function playTestSound() {
+            // 音声ONにした時のテスト音
+            const audio = new Audio('/voice/yorosiku.wav');
+            audio.volume = 0.7;
+            audio.play().catch(e => {
+                console.log('テスト音声再生エラー:', e);
+                document.getElementById('audio-status').textContent = '音声ファイル読み込みエラー';
+            });
+        }
         
         function refreshData() {
             fetch('/api/data')
@@ -199,13 +272,22 @@ HTML_TEMPLATE = """
         }
         
         function playVoice(faceType) {
-            // 状態に応じた音声ファイルを決定
+            // 音声が有効で、ユーザーが操作済みの場合のみ再生
+            if (!audioEnabled || !userInteracted) {
+                return;
+            }
+            
             let voiceFile = getVoiceFile(faceType);
             
             if (voiceFile) {
                 const audio = new Audio(`/voice/${voiceFile}`);
-                audio.volume = 0.7; // 音量調整
-                audio.play().catch(e => console.log('音声再生エラー:', e));
+                audio.volume = 0.7;
+                audio.play().catch(e => {
+                    console.log('音声再生エラー:', e);
+                    // エラー時は音声を自動的にOFFに
+                    audioEnabled = false;
+                    toggleAudio();
+                });
                 console.log(`🎵 音声再生: ${voiceFile}`);
             }
         }
@@ -271,10 +353,10 @@ HTML_TEMPLATE = """
             // 画像を更新
             characterImg.src = imageSrc;
             
-            // 状態が変わった時だけ音声再生
+            // 状態が変わった時だけ音声再生（音声ON時のみ）
             if (lastFaceType !== faceType) {
                 console.log(`🔄 状態変化: ${lastFaceType} → ${faceType}`);
-                playVoice(faceType);
+                playVoice(faceType); // 音声ON/OFF判定含む
                 lastFaceType = faceType;
             }
         }
@@ -344,6 +426,14 @@ HTML_TEMPLATE = """
                 {% elif character_face == 'yousei5' %}<i class="fas fa-angry"></i>
                 {% else %}<i class="fas fa-smile"></i>{% endif %}
             </div>
+        </div>
+        
+        <!-- 音声オンオフボタン -->
+        <div class="audio-toggle">
+            <button id="audio-toggle-btn" class="audio-toggle-btn" onclick="toggleAudio()">
+                <i class="fas fa-volume-mute"></i> 音声OFF
+            </button>
+            <div id="audio-status" class="audio-status">クリックで音声ON</div>
         </div>
     </div>
     
