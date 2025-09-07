@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template_string, jsonify, request, abort
+from flask import Flask, render_template_string, jsonify, request, abort, send_file
 from datetime import datetime
 
 # Flaskアプリ設定
