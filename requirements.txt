@@ -1,0 +1,16 @@
+# AquaSync 共通パッケージ
+Flask==3.0.0
+requests==2.31.0
+python-dotenv==1.0.0
+
+# ローカル側専用
+pyserial==3.5
+
+# Gemini API（オプション）
+google-generativeai==0.3.2
+
+# セキュリティ
+Werkzeug==3.0.1
+
+# Render デプロイ用
+gunicorn==21.2.0
