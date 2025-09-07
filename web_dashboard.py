@@ -6,7 +6,7 @@ from datetime import datetime
 app = Flask(__name__)
 
 # 環境変数から設定を取得
-API_SECRET_KEY = os.getenv('API_SECRET_KEY', 'your-secret-api-key')
+API_SECRET_KEY = os.getenv('API_SECRET_KEY', 'aquasync-secret-key-2024')
 
 # グローバル変数でデータを保存（メモリ内ストレージ）
 current_data = {
@@ -19,7 +19,7 @@ current_data = {
     'character_face': 'normal'
 }
 
-# HTML テンプレート（元のコードと同じ）
+# HTML テンプレート（ビジュアルノベル風・大幅サイズアップ版）
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="ja">
@@ -35,380 +35,176 @@ HTML_TEMPLATE = """
             box-sizing: border-box;
         }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background-color: #f8f9fa;
+            font-family: 'Hiragino Kaku Gothic Pro', 'ヒラギノ角ゴ Pro W3', Meiryo, 'メイリオ', Osaka, 'MS PGothic', sans-serif;
+            background: url('/img/back.jpg') center center / cover no-repeat fixed;
             color: #333;
             line-height: 1.6;
-            padding: 20px;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            height: 100vh;
             overflow: hidden;
-        }
-        .header {
-            background: #2c3e50;
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-        .header h1 {
-            font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-        .header .subtitle {
-            font-size: 16px;
-            opacity: 0.9;
-            font-weight: 400;
-        }
-        .content {
-            padding: 30px;
-        }
-        .main-content {
-            margin-bottom: 30px;
-        }
-        .status-overview {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .character-section {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            padding: 20px;
-            text-align: center;
-        }
-        .character-title {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 15px;
-            color: #2c3e50;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .character-face {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            margin: 0 auto 15px auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             position: relative;
-            transition: all 0.3s ease;
         }
-        .character-face-happy {
-            background: linear-gradient(135deg, #ffb3d6 0%, #ffc9e0 100%);
-            border: 3px solid #ff69b4;
-            box-shadow: 0 0 15px rgba(255, 105, 180, 0.3);
-        }
-        .character-face-normal {
-            background: linear-gradient(135deg, #e8d5ff 0%, #f0e6ff 100%);
-            border: 3px solid #9575cd;
-            box-shadow: 0 0 10px rgba(149, 117, 205, 0.2);
-        }
-        .character-face-sad {
-            background: linear-gradient(135deg, #ffcccb 0%, #ffe4e1 100%);
-            border: 3px solid #ff6b6b;
-            box-shadow: 0 0 10px rgba(255, 107, 107, 0.2);
-        }
-        .face-eyes {
-            position: absolute;
+        
+        /* サイドバー（右上） */
+        .sidebar {
+            position: fixed;
             top: 20px;
-            width: 100%;
-            display: flex;
-            justify-content: space-around;
-            padding: 0 15px;
+            right: 20px;
+            width: 300px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 3px solid #8B4513;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            z-index: 20;
         }
-        .eye {
-            width: 10px;
-            height: 12px;
-            background: #333;
-            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-            position: relative;
+        .sidebar-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #8B4513;
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 2px solid #8B4513;
+            padding-bottom: 12px;
         }
-        .eye::after {
-            content: '';
-            position: absolute;
-            top: -3px;
-            left: -2px;
-            width: 14px;
-            height: 6px;
-            border: 2px solid #333;
-            border-bottom: none;
-            border-radius: 50% 50% 0 0;
-        }
-        .eye::before {
-            content: '';
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 3px;
-            height: 3px;
-            background: white;
-            border-radius: 50%;
-        }
-        .face-cheeks {
-            position: absolute;
-            top: 30px;
-            width: 100%;
+        .status-item {
             display: flex;
             justify-content: space-between;
-            padding: 0 8px;
+            align-items: center;
+            margin-bottom: 18px;
+            font-size: 20px;
         }
-        .cheek {
-            width: 12px;
-            height: 8px;
-            background: rgba(255, 182, 193, 0.6);
-            border-radius: 50%;
+        .status-label {
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
-        .face-mouth {
-            position: absolute;
-            bottom: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        .mouth-happy {
-            width: 25px;
-            height: 12px;
-            border: 2px solid #333;
-            border-top: none;
-            border-radius: 0 0 25px 25px;
-        }
-        .mouth-normal {
-            width: 16px;
-            height: 2px;
-            background: #333;
-            border-radius: 2px;
-        }
-        .mouth-sad {
-            width: 25px;
-            height: 12px;
-            border: 2px solid #333;
-            border-bottom: none;
-            border-radius: 25px 25px 0 0;
-            transform: translateX(-50%) rotate(180deg);
-        }
-        .face-bow {
-            position: absolute;
-            top: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 16px;
-            height: 8px;
-        }
-        .face-bow::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            width: 6px;
-            height: 8px;
-            background: #ff69b4;
-            border-radius: 50% 0 50% 50%;
-            transform: rotate(-20deg);
-        }
-        .face-bow::after {
-            content: '';
-            position: absolute;
-            right: 0;
-            width: 6px;
-            height: 8px;
-            background: #ff69b4;
-            border-radius: 0 50% 50% 50%;
-            transform: rotate(20deg);
-        }
-        .face-bow-center {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            width: 4px;
-            height: 6px;
-            background: #e91e63;
-            border-radius: 2px;
-        }
-        .character-message {
-            background: linear-gradient(135deg, #fff0f5 0%, #ffeef8 100%);
-            border: 1px solid #ffb3d6;
-            border-radius: 15px;
-            padding: 8px 12px;
-            font-size: 12px;
-            color: #8e24aa;
-            font-weight: 500;
-            position: relative;
-            margin-top: 10px;
-        }
-        .character-message::before {
-            content: '';
-            position: absolute;
-            top: -6px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 6px solid transparent;
-            border-right: 6px solid transparent;
-            border-bottom: 6px solid #ffb3d6;
-        }
-        .character-message::after {
-            content: '';
-            position: absolute;
-            top: -5px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 5px solid transparent;
-            border-right: 5px solid transparent;
-            border-bottom: 5px solid #fff0f5;
-        }
-        .metric-card {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            padding: 20px;
+        .status-label i {
+            font-size: 24px;
+            width: 30px;
             text-align: center;
         }
-        .metric-icon {
-            font-size: 24px;
-            margin-bottom: 10px;
+        .status-value {
+            font-weight: bold;
+            font-size: 22px;
         }
-        .metric-value {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-        .metric-label {
-            font-size: 14px;
-            color: #6c757d;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .main-status {
-            background: white;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            padding: 30px;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .status-icon {
-            font-size: 48px;
-            margin-bottom: 20px;
-        }
-        .percentage {
-            font-size: 56px;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-        .status-message {
-            font-size: 18px;
-            margin-bottom: 25px;
-            padding: 0 20px;
-        }
-        .progress-container {
+        .status-green .status-value { color: #28a745; }
+        .status-yellow .status-value { color: #ffc107; }
+        .status-red .status-value { color: #dc3545; }
+        .status-unknown .status-value { color: #6c757d; }
+        .progress-mini {
             width: 100%;
+            height: 10px;
             background: #e9ecef;
-            border-radius: 4px;
-            height: 12px;
+            border-radius: 5px;
             overflow: hidden;
-            margin-bottom: 20px;
+            margin-top: 8px;
         }
-        .progress-fill {
+        .progress-mini-fill {
             height: 100%;
             transition: width 0.5s ease;
-            border-radius: 4px;
         }
-        .status-green .metric-icon { color: #28a745; }
-        .status-green .status-icon { color: #28a745; }
-        .status-green .percentage { color: #28a745; }
-        .status-green .progress-fill { background: #28a745; }
-        
-        .status-yellow .metric-icon { color: #ffc107; }
-        .status-yellow .status-icon { color: #ffc107; }
-        .status-yellow .percentage { color: #ffc107; }
-        .status-yellow .progress-fill { background: #ffc107; }
-        
-        .status-red .metric-icon { color: #dc3545; }
-        .status-red .status-icon { color: #dc3545; }
-        .status-red .percentage { color: #dc3545; }
-        .status-red .progress-fill { background: #dc3545; }
-        
-        .status-unknown .metric-icon { color: #6c757d; }
-        .status-unknown .status-icon { color: #6c757d; }
-        .status-unknown .percentage { color: #6c757d; }
-        .status-unknown .progress-fill { background: #6c757d; }
-        
-        .actions {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 30px;
+        .connection-status-mini {
+            font-size: 16px;
+            text-align: center;
+            margin-top: 15px;
+            padding: 8px;
+            border-radius: 8px;
         }
-        .btn {
-            background: #007bff;
+        .connection-status-mini.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        .connection-status-mini.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        /* キャラクター表示エリア */
+        .character-area {
+            position: fixed;
+            bottom: 300px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+        .character-image {
+            width: 1200px;
+            height: auto;
+            filter: drop-shadow(0 0 30px rgba(0, 0, 0, 0.6));
+            transition: all 0.3s ease;
+        }
+        .character-image.happy {
+            filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.8));
+        }
+        .character-image.sad {
+            filter: drop-shadow(0 0 30px rgba(255, 0, 0, 0.6));
+        }
+        
+        /* 台詞ボックス */
+        .dialogue-container {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            right: 30px;
+            height: 250px;
+            background: linear-gradient(to bottom, rgba(139, 69, 19, 0.95), rgba(101, 67, 33, 0.95));
+            border-top: 4px solid #8B4513;
+            border-radius: 20px;
+            padding: 30px 60px;
+            box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.6);
+            font-weight: bold;
+        }
+        .dialogue-box {
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            border: 3px solid #8B4513;
+            border-radius: 18px;
+            padding: 30px;
+            position: relative;
+            box-shadow: inset 0 0 15px rgba(139, 69, 19, 0.3);
+        }
+        .dialogue-text {
+            font-size: 24px;
+            line-height: 1.7;
+            color: #333;
+            overflow-y: auto;
+            height: 100%;
+            font-weight: bold;
+        }
+        .dialogue-name {
+            position: absolute;
+            top: -22px;
+            left: 40px;
+            background: #8B4513;
+            color: white;
+            padding: 10px 30px;
+            border-radius: 22px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        /* 更新ボタン */
+        .update-button {
+            position: fixed;
+            bottom: 300px;
+            right: 50px;
+            background: rgba(139, 69, 19, 0.9);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
+            padding: 15px 30px;
+            border-radius: 30px;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background-color 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            font-weight: bold;
         }
-        .btn:hover {
-            background: #0056b3;
-        }
-        .btn-secondary {
-            background: #6c757d;
-        }
-        .btn-secondary:hover {
-            background: #545b62;
-        }
-        .footer-info {
-            background: #f8f9fa;
-            padding: 20px;
-            border-top: 1px solid #e9ecef;
-            text-align: center;
-            font-size: 14px;
-            color: #6c757d;
-        }
-        .footer-info i {
-            margin-right: 5px;
-        }
-        .connection-status {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            border-radius: 6px;
-            padding: 15px;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        .connection-status.disconnected {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-        }
-        @media (max-width: 768px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-            .status-overview {
-                grid-template-columns: 1fr;
-            }
-            .actions {
-                flex-direction: column;
-                align-items: center;
-            }
+        .update-button:hover {
+            background: rgba(139, 69, 19, 1);
+            transform: scale(1.05);
         }
     </style>
     <script>
@@ -418,48 +214,59 @@ HTML_TEMPLATE = """
             fetch('/api/data')
                 .then(response => response.json())
                 .then(data => {
-                    // 基本データの更新
-                    document.getElementById('percentage').textContent = data.percentage;
-                    document.getElementById('percentage-main').textContent = data.percentage + '%';
+                    // サイドバーの更新
+                    document.getElementById('percentage').textContent = data.percentage + '%';
                     document.getElementById('raw-value').textContent = data.raw_value;
                     document.getElementById('status-text').textContent = getStatusText(data.status);
                     document.getElementById('last-update').textContent = data.last_update || 'データなし';
                     
-                    // キャラクターの更新
-                    document.getElementById('character-message').textContent = data.character_message || 'お疲れ様！';
-                    updateCharacterFace(data.character_face || data.status);
+                    // 台詞ボックスの更新
+                    document.getElementById('dialogue-text').textContent = data.character_message || 'お疲れ様！';
+                    
+                    // キャラクター画像のエフェクト更新
+                    updateCharacterEffect(data.character_face || data.status);
                     
                     // 接続状態の更新
-                    updateConnectionStatus(data.last_update);
+                    updateConnectionStatusMini(data.last_update);
                     
                     // ステータスに応じてクラスを更新
-                    const mainStatus = document.getElementById('main-status');
-                    const metricCards = document.querySelectorAll('.metric-card');
-                    
-                    // 古いステータスクラスを削除
-                    mainStatus.className = 'main-status status-' + data.status;
-                    metricCards.forEach(card => {
-                        card.className = 'metric-card status-' + data.status;
-                    });
+                    const sidebar = document.getElementById('sidebar');
+                    sidebar.className = 'sidebar status-' + data.status;
                     
                     // プログレスバーを更新
-                    const progressFill = document.getElementById('progress-fill');
+                    const progressFill = document.getElementById('progress-mini-fill');
                     progressFill.style.width = data.percentage + '%';
-                    progressFill.className = 'progress-fill status-' + data.status;
-                    
-                    // ステータスアイコンを更新
-                    const statusIcon = document.getElementById('status-icon');
-                    statusIcon.className = getStatusIcon(data.status);
+                    progressFill.className = 'progress-mini-fill status-' + data.status;
                 });
         }
         
-        function updateConnectionStatus(lastUpdate) {
-            const connectionStatus = document.getElementById('connection-status');
-            const connectionText = document.getElementById('connection-text');
+        function updateCharacterEffect(faceType) {
+            const characterImg = document.getElementById('character-image');
+            
+            // クラスをリセット
+            characterImg.className = 'character-image';
+            
+            switch(faceType) {
+                case 'green':
+                case 'happy':
+                    characterImg.classList.add('happy');
+                    break;
+                case 'red':
+                case 'sad':
+                    characterImg.classList.add('sad');
+                    break;
+                default:
+                    // normal - デフォルトスタイル
+                    break;
+            }
+        }
+        
+        function updateConnectionStatusMini(lastUpdate) {
+            const connectionStatus = document.getElementById('connection-status-mini');
             
             if (!lastUpdate) {
-                connectionStatus.className = 'connection-status disconnected';
-                connectionText.textContent = '⚠️ ローカルセンサーからのデータ待機中...';
+                connectionStatus.className = 'connection-status-mini disconnected';
+                connectionStatus.textContent = '⚠️ データ待機中';
                 return;
             }
             
@@ -468,37 +275,11 @@ HTML_TEMPLATE = """
             const timeDiff = (now - updateTime) / 1000; // 秒単位
             
             if (timeDiff > 60) { // 1分以上更新がない
-                connectionStatus.className = 'connection-status disconnected';
-                connectionText.textContent = `⚠️ センサー接続が切れています（${Math.floor(timeDiff/60)}分前）`;
+                connectionStatus.className = 'connection-status-mini disconnected';
+                connectionStatus.textContent = `⚠️ 接続切れ (${Math.floor(timeDiff/60)}分前)`;
             } else {
-                connectionStatus.className = 'connection-status';
-                connectionText.textContent = '✅ ローカルセンサーと正常に接続中';
-            }
-        }
-        
-        function updateCharacterFace(faceType) {
-            const face = document.getElementById('character-face');
-            const mouth = document.getElementById('face-mouth');
-            
-            // クラスをリセット
-            face.className = 'character-face';
-            mouth.className = 'face-mouth';
-            
-            switch(faceType) {
-                case 'green':
-                case 'happy':
-                    face.classList.add('character-face-happy');
-                    mouth.classList.add('mouth-happy');
-                    break;
-                case 'red':
-                case 'sad':
-                    face.classList.add('character-face-sad');
-                    mouth.classList.add('mouth-sad');
-                    break;
-                default:
-                    face.classList.add('character-face-normal');
-                    mouth.classList.add('mouth-normal');
-                    break;
+                connectionStatus.className = 'connection-status-mini connected';
+                connectionStatus.textContent = '✅ 接続中';
             }
         }
         
@@ -511,135 +292,85 @@ HTML_TEMPLATE = """
             }
         }
         
-        function getStatusIcon(status) {
-            switch(status) {
-                case 'green': return 'fas fa-check-circle status-icon';
-                case 'yellow': return 'fas fa-exclamation-triangle status-icon';
-                case 'red': return 'fas fa-times-circle status-icon';
-                default: return 'fas fa-question-circle status-icon';
-            }
-        }
-        
         // 15秒ごとに自動更新
         setInterval(refreshData, 15000);
         
         // ページ読み込み時に1回実行
         window.onload = function() {
             refreshData();
-            updateConnectionStatus('{{ last_update }}');
+            updateConnectionStatusMini('{{ last_update }}');
         };
     </script>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1><i class="fas fa-seedling"></i> AquaSync 水分監視システム</h1>
-            <div class="subtitle">植物の水分レベルをリアルタイムで監視</div>
+    <!-- サイドバー（右上） -->
+    <div id="sidebar" class="sidebar status-{{ status }}">
+        <div class="sidebar-title">水分データ</div>
+        
+        <div class="status-item">
+            <span class="status-label">
+                <i class="fas fa-tint"></i>
+                水分レベル
+            </span>
+            <span id="percentage" class="status-value">{{ percentage }}%</span>
         </div>
         
-        <div class="content">
-            <div id="connection-status" class="connection-status">
-                <span id="connection-text">✅ ローカルセンサーと正常に接続中</span>
-            </div>
-            
-            <div class="status-overview">
-                <div class="metric-card status-{{ status }}">
-                    <div class="metric-icon">
-                        <i class="fas fa-tint"></i>
-                    </div>
-                    <div class="metric-value" id="percentage">{{ percentage }}</div>
-                    <div class="metric-label">水分レベル (%)</div>
-                </div>
-                
-                <div class="metric-card status-{{ status }}">
-                    <div class="metric-icon">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <div class="metric-value" id="raw-value">{{ raw_value }}</div>
-                    <div class="metric-label">センサー値</div>
-                </div>
-                
-                <div class="metric-card status-{{ status }}">
-                    <div class="metric-icon">
-                        <i class="fas fa-info-circle"></i>
-                    </div>
-                    <div class="metric-value" id="status-text">
-                        {% if status == 'green' %}良好
-                        {% elif status == 'yellow' %}適度
-                        {% elif status == 'red' %}不足
-                        {% else %}不明{% endif %}
-                    </div>
-                    <div class="metric-label">ステータス</div>
-                </div>
-                
-                <div class="character-section">
-                    <div class="character-title">植物の気持ち</div>
-                    <div id="character-face" class="character-face character-face-{{ character_face }}">
-                        <div class="face-bow">
-                            <div class="face-bow-center"></div>
-                        </div>
-                        <div class="face-eyes">
-                            <div class="eye"></div>
-                            <div class="eye"></div>
-                        </div>
-                        <div class="face-cheeks">
-                            <div class="cheek"></div>
-                            <div class="cheek"></div>
-                        </div>
-                        <div id="face-mouth" class="face-mouth 
-                            {% if character_face == 'happy' or status == 'green' %}mouth-happy
-                            {% elif character_face == 'sad' or status == 'red' %}mouth-sad
-                            {% else %}mouth-normal{% endif %}">
-                        </div>
-                    </div>
-                    <div class="character-message" id="character-message">
-                        {{ character_message }}
-                    </div>
-                </div>
-            </div>
-            
-            <div id="main-status" class="main-status status-{{ status }}">
-                <div id="status-icon" class="
-                    {% if status == 'green' %}fas fa-check-circle
-                    {% elif status == 'yellow' %}fas fa-exclamation-triangle
-                    {% elif status == 'red' %}fas fa-times-circle
-                    {% else %}fas fa-question-circle{% endif %} status-icon">
-                </div>
-                
-                <div class="percentage" id="percentage-main">{{ percentage }}%</div>
-                
-                <div class="progress-container">
-                    <div id="progress-fill" class="progress-fill status-{{ status }}" 
-                         style="width: {{ percentage }}%"></div>
-                </div>
-                
-                <div class="status-message">
-                    {% if status == 'green' %}
-                        水分レベルは十分です。植物は健康な状態を保っています。
-                    {% elif status == 'yellow' %}
-                        水分レベルは適度です。継続的な監視をお勧めします。
-                    {% elif status == 'red' %}
-                        水分が不足しています。早急に水やりが必要です。
-                    {% else %}
-                        ローカルセンサーからのデータを待機中です。
-                    {% endif %}
-                </div>
-            </div>
-            
-            <div class="actions">
-                <button class="btn" onclick="refreshData()">
-                    <i class="fas fa-sync-alt"></i> データを更新
-                </button>
-                <button class="btn btn-secondary" onclick="window.location.reload()">
-                    <i class="fas fa-redo"></i> ページを再読み込み
-                </button>
-            </div>
+        <div class="progress-mini">
+            <div id="progress-mini-fill" class="progress-mini-fill status-{{ status }}" 
+                 style="width: {{ percentage }}%"></div>
         </div>
         
-        <div class="footer-info">
-            <i class="fas fa-clock"></i> 最終更新: <span id="last-update">{{ last_update or 'データなし' }}</span>
-            <br>
-            <i class="fas fa-cloud"></i> Cloud Dashboard Version - Powered by Render
+        <div class="status-item">
+            <span class="status-label">
+                <i class="fas fa-chart-line"></i>
+                センサー値
+            </span>
+            <span id="raw-value" class="status-value">{{ raw_value }}</span>
+        </div>
+        
+        <div class="status-item">
+            <span class="status-label">
+                <i class="fas fa-heart"></i>
+                ステータス
+            </span>
+            <span id="status-text" class="status-value">
+                {% if status == 'green' %}良好
+                {% elif status == 'yellow' %}適度
+                {% elif status == 'red' %}不足
+                {% else %}不明{% endif %}
+            </span>
+        </div>
+        
+        <div class="status-item">
+            <span class="status-label">
+                <i class="fas fa-clock"></i>
+                最終更新
+            </span>
+            <span id="last-update" class="status-value" style="font-size: 16px;">{{ last_update or 'データなし' }}</span>
+        </div>
+        
+        <div id="connection-status-mini" class="connection-status-mini connected">
+            ✅ 接続中
+        </div>
+    </div>
+    
+    <!-- キャラクター表示エリア -->
+    <div class="character-area">
+        <img id="character-image" src="/img/yousei1.png" alt="植物妖精" class="character-image {{ character_face }}">
+    </div>
+    
+    <!-- 更新ボタン -->
+    <button class="update-button" onclick="refreshData()">
+        <i class="fas fa-sync-alt"></i> 更新
+    </button>
+    
+    <!-- 台詞ボックス -->
+    <div class="dialogue-container">
+        <div class="dialogue-box">
+            <div class="dialogue-name">植物妖精からのメッセージ</div>
+            <div id="dialogue-text" class="dialogue-text">
+                {{ character_message or 'データを受信中だよ〜！' }}
+            </div>
         </div>
     </div>
 </body>
@@ -693,6 +424,15 @@ def update_data():
         print(f"データ更新エラー: {e}")
         return jsonify({'error': 'Failed to update data'}), 500
 
+@app.route('/img/<filename>')
+def serve_image(filename):
+    """ローカル画像ファイルを配信"""
+    image_path = os.path.join(os.getcwd(), 'img', filename)
+    if os.path.exists(image_path):
+        return send_file(image_path)
+    else:
+        abort(404)
+
 @app.route('/health')
 def health_check():
     """ヘルスチェック用エンドポイント"""
@@ -703,18 +443,9 @@ def health_check():
         'current_status': current_data.get('status', 'unknown')
     })
 
-@app.route('/image/<filename>')
-def serve_image(filename):
-    """ローカル画像ファイルを配信"""
-    image_path = os.path.join(os.getcwd(), filename)
-    if os.path.exists(image_path):
-        return send_file(image_path)
-    else:
-        abort(404)
-
 if __name__ == '__main__':
     print("🌐 AquaSync Cloud Dashboard 起動中...")
-    print(f"🔐 API Secret Key: {'設定済み' if API_SECRET_KEY != 'your-secret-api-key' else '未設定'}")
+    print(f"🔐 API Secret Key: {'設定済み' if API_SECRET_KEY != 'aquasync-secret-key-2024' else '未設定'}")
     print("📊 ダッシュボード: /")
     print("🔌 API エンドポイント:")
     print("  - GET  /api/data - データ取得")
