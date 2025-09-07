@@ -29,7 +29,7 @@ current_data = {
 def generate_character_message(percentage, status):
     """Gemini APIを使って植物キャラクターのセリフを生成"""
     if not GEMINI_API_KEY:
-        return get_default_message(status)
+        return get_default_message(status, percentage)
     
     try:
         import google.generativeai as genai
@@ -37,17 +37,25 @@ def generate_character_message(percentage, status):
         genai.configure(api_key=GEMINI_API_KEY)
         model = genai.GenerativeModel('gemini-1.5-flash')
         
+        # より長い会話的なセリフ用プロンプト
         prompt = f"""
-あなたは明るくて元気なギャル系の植物キャラクターです。
-現在の水分レベル: {percentage}%
-状態: {status}
+あなたは植物の妖精キャラクターです。ビジュアルノベル風のゲームで、植物の世話をしてくれる人と親しく会話しています。
+
+現在の状況:
+- 水分レベル: {percentage}%
+- 状態: {status}
 
 以下の条件でセリフを作ってください：
-- 15文字以内の短いセリフ
-- 明るくてギャルっぽい話し方
-- 「〜だよ！」「〜じゃん！」「〜って感じ♪」などの語尾
+- 100-200文字程度の会話的なセリフ
+- 植物妖精らしい優しく親しみやすい話し方
+- 自然な会話の流れで相手に話しかける
+- 現在の水分状況を含めつつ、感情や思いも表現
+- 相手への感謝、質問、お願い、日常的な話題なども織り交ぜる
+- 「〜ですね」「〜ですよ」「〜です♪」「〜でしょうか」などの丁寧で親しみやすい語尾
 - 絵文字は使わない
-- 水分状態に応じた気持ちを表現
+
+例：
+良好(80%): 「おかげさまで今日も水分が{percentage}%でとっても元気です♪ 最近暖かくなってきましたが、いつもお世話をありがとうございます。あなたの植物への愛情がとても伝わってきますよ。」
 
 セリフのみを返してください:
 """
@@ -55,27 +63,44 @@ def generate_character_message(percentage, status):
         response = model.generate_content(prompt)
         message = response.text.strip()
         
-        if len(message) > 20:
-            message = message[:17] + "..."
+        # 長いメッセージの場合は適切にトリミング
+        if len(message) > 250:
+            message = message[:247] + "..."
             
         return message
         
     except Exception as e:
         print(f"Gemini API エラー: {e}")
-        return get_default_message(status)
+        return get_default_message(status, percentage)
 
-def get_default_message(status):
+def get_default_message(status, percentage):
     """デフォルトメッセージ（API失敗時用）"""
     import random
     
     messages = {
-        'green': ['めっちゃ元気だよ〜！', '今日も調子いいじゃん♪', 'プリプリしてる〜！'],
-        'yellow': ['まあまあって感じかな', 'ぼちぼちだよ〜', 'そこそこって感じ！'],
-        'red': ['のど乾いちゃった〜', 'お水欲しいよ〜！', 'カラカラだよ〜'],
-        'unknown': ['どうかな〜？', 'よくわからないや', 'チェック中だよ〜']
+        'green': [
+            f'おかげさまで今日も水分が{percentage}%でとっても元気です♪ 最近は調子がよくて、新しい葉っぱも出てきそうで嬉しいです。いつもお世話をありがとうございます。あなたの植物への愛情がとても伝わってきますよ。',
+            f'今日は水分レベルが{percentage}%で絶好調です！ こんなに元気だと、周りの植物たちにも良い影響を与えられそうですね。日々のお世話に感謝しています。一緒に素敵な時間を過ごしていきましょう。',
+            f'水分たっぷりの{percentage}%で、葉っぱもピンピンしています。お世話をしてくださるあなたのおかげで、毎日幸せに過ごせています。これからもよろしくお願いしますね。'
+        ],
+        'yellow': [
+            f'今は水分が{percentage}%で、まあまあといったところでしょうか。でも心配しないでくださいね。あなたがいつも見守ってくれているので安心です。もう少し様子を見ながら、一緒に頑張っていきましょう。',
+            f'水分レベルは{percentage}%です。今のところは大丈夫ですが、いつも気にかけていただけると嬉しいです。あなたの優しさにいつも支えられています。これからもよろしくお願いします。',
+            f'{percentage}%の水分で、そこそこ元気にしています。最近どうですか？お忙しい毎日だと思いますが、時々私のことも思い出してくださいね。継続的に見守ってくださると嬉しいです。'
+        ],
+        'red': [
+            f'実は水分が{percentage}%まで下がってしまって、ちょっと喉が渇いた感じです。もしお時間があるときに、少しお水をいただけると嬉しいです。いつもお忙しい中でのお世話、本当に感謝しています。',
+            f'お水が足りなくて、水分レベルが{percentage}%になってしまいました。あなたにお願いするのは申し訳ないのですが、お手すきの時に助けていただけませんか？いつもありがとうございます。',
+            f'ちょっと喉が渇いて、{percentage}%まで水分が下がっています。無理をしなくて大丈夫ですが、もしよろしければお水をお願いします。あなたの優しさにいつも感謝していますよ。'
+        ],
+        'unknown': [
+            'システムを確認中です。少々お待ちください。今日はどんな一日でしたか？私も早くあなたとお話しできるように準備を整えますね。いつもお世話になってありがとうございます。',
+            'データを読み取り中ですので、しばらくお待ちくださいね。お忙しい中、私のことを気にかけてくださってありがとうございます。準備ができたら、また楽しくお話ししましょう。',
+            'センサーとの接続を確認しています。もう少しお待ちください。あなたがいつも見守ってくれているので、安心して準備を進められます。ありがとうございます。'
+        ]
     }
     
-    status_messages = messages.get(status, ['よろしく〜♪'])
+    status_messages = messages.get(status, ['いつもお世話をありがとうございます。一緒に素敵な時間を過ごしていきましょうね。'])
     return random.choice(status_messages)
 
 def send_line_message(message):
