@@ -5,11 +5,6 @@
 const int PIN_WATER = A0;    // ウォーターセンサー
 const int PIN_SERVO = 6;     // サーボモーター
 
-// ブザー
-const int PIN_BUZZER_GND = 2;    // ブザー G
-const int PIN_BUZZER_VCC = 3;    // ブザー U  
-const int PIN_BUZZER_SIG = 4;    // ブザー S
-
 // トラフィックライト
 const int PIN_LED_VCC = A1;      // LED電源
 const int PIN_LED_RED = A2;      // 赤LED  
@@ -35,19 +30,11 @@ const int WATER_LOW_THRESHOLD = 30;     // これ以下→水不足（赤）
 const int WATER_OK_THRESHOLD  = 60;     // これ以上→十分な水（緑）
 
 // === 状態管理フラグ ===
-bool playedAria = false; // 一度だけ再生用フラグ
 int lastWaterStatus = -1; // 前回の水分状態（-1=初期状態）
 // 状態定義: 0=赤(水不足), 1=黄(適度), 2=緑(十分)
 
 void setup() {
   Serial.begin(9600);
-  
-  // ブザー電源ピン設定
-  pinMode(PIN_BUZZER_GND, OUTPUT);
-  pinMode(PIN_BUZZER_VCC, OUTPUT);
-  pinMode(PIN_BUZZER_SIG, OUTPUT);
-  digitalWrite(PIN_BUZZER_GND, LOW);   // GND
-  digitalWrite(PIN_BUZZER_VCC, HIGH);  // VCC
   
   // LED電源とピン設定
   pinMode(PIN_LED_VCC, OUTPUT);
@@ -75,7 +62,7 @@ void setup() {
   // 全LED消灯
   setTrafficLight(0, 0, 0);
   
-  Serial.println("=== AquaSync 完全システム開始 ===");
+  Serial.println("=== AquaSync 静音システム開始 ===");
   testAllSystems(); // 全システムテスト（静音）
 }
 
@@ -122,25 +109,19 @@ int getWaterStatusCode(int waterPct) {
   }
 }
 
-// 状態変化時の処理
+// 状態変化時の処理（静音版）
 void handleStatusChange(int currentStatus, int waterPct) {
   if (currentStatus != lastWaterStatus) {
     switch (currentStatus) {
       case 0: // 赤（水不足）
-        // 音なし
         Serial.println("🔴 水不足状態になりました");
         break;
         
       case 1: // 黄（適度）
-        playSimpleBeep(); // 単発音
         Serial.println("🟡 適度な水分状態になりました");
         break;
         
       case 2: // 緑（十分）
-        if (!playedAria) {
-          playDoubleBeep(); // 2回ビープ音
-          playedAria = true;
-        }
         Serial.println("🟢 十分な水量になりました");
         break;
     }
@@ -229,52 +210,5 @@ void testAllSystems() {
   }
   display.clear(); delay(500);
   
-  // ブザーテストは削除（静かな起動）
-  Serial.println("ブザー: 静音モード");
-  
-  Serial.println("=== 全システムテスト完了 ===");
-}
-
-// 単発ビープ音（黄色状態用）
-void playSimpleBeep() {
-  Serial.println("🔔 単発音");
-  tone(PIN_BUZZER_SIG, 1000, 300); // 1000Hz、300ms
-  
-  // サーボを軽く動かす
-  myServo.write(85);
-  delay(150);
-  myServo.write(95);
-  delay(150);
-  myServo.write(90); // 中立に戻す
-  
-  delay(300);
-  noTone(PIN_BUZZER_SIG);
-  Serial.println("🔔 単発音終了");
-}
-
-// 2回ビープ音（緑状態用）
-void playDoubleBeep() {
-  Serial.println("🔔 完了音（2回）");
-  
-  // 1回目のビープ
-  tone(PIN_BUZZER_SIG, 1200, 300); // 高い音、300ms
-  myServo.write(85);
-  delay(150);
-  myServo.write(95);
-  delay(150);
-  noTone(PIN_BUZZER_SIG);
-  
-  delay(200); // 間隔
-  
-  // 2回目のビープ
-  tone(PIN_BUZZER_SIG, 1200, 300); // 高い音、300ms
-  myServo.write(85);
-  delay(150);
-  myServo.write(95);
-  delay(150);
-  
-  myServo.write(90); // 中立に戻す
-  delay(300);
-  noTone(PIN_BUZZER_SIG);
-  Serial.println("🔔 完了音終了");
+  Serial.println("=== 全システムテスト完了（静音） ===");
 }
