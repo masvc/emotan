@@ -294,7 +294,7 @@ HTML_TEMPLATE = """
         
         function getVoiceFile(faceType) {
             const voiceFiles = {
-                'yousei1': ['ohayo.wav', 'yorosiku.wav'],
+                'yousei1': ['omizu.wav'],  // 0%の時は水不足なので「お水」音声
                 'yousei2': ['nice.wav'],
                 'yousei4': ['arigatou.wav', 'yatta.wav'],
                 'yousei5': ['kora.wav', 'omizu.wav']
