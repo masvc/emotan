@@ -79,6 +79,7 @@ HTML_TEMPLATE = """
             display: flex;
             align-items: center;
             gap: 12px;
+            font-weight: bold;
         }
         .status-label i {
             font-size: 24px;
@@ -111,6 +112,7 @@ HTML_TEMPLATE = """
             margin-top: 15px;
             padding: 8px;
             border-radius: 8px;
+            font-weight: bold;
         }
         .connection-status-mini.connected {
             background: #d4edda;
@@ -130,7 +132,7 @@ HTML_TEMPLATE = """
             z-index: 10;
         }
         .character-image {
-            width: 1200px;
+            width: 800px;
             height: auto;
             filter: drop-shadow(0 0 30px rgba(0, 0, 0, 0.6));
             transition: all 0.3s ease;
