@@ -703,20 +703,14 @@ def health_check():
         'current_status': current_data.get('status', 'unknown')
     })
 
-@app.route('/api/status')
-def api_status():
-    """API ステータス確認用"""
-    return jsonify({
-        'api_version': '1.0',
-        'service': 'AquaSync Cloud Dashboard',
-        'status': 'running',
-        'endpoints': [
-            '/api/data - GET: データ取得',
-            '/api/update - POST: データ更新（要認証）',
-            '/health - GET: ヘルスチェック',
-            '/api/status - GET: API ステータス'
-        ]
-    })
+@app.route('/image/<filename>')
+def serve_image(filename):
+    """ローカル画像ファイルを配信"""
+    image_path = os.path.join(os.getcwd(), filename)
+    if os.path.exists(image_path):
+        return send_file(image_path)
+    else:
+        abort(404)
 
 if __name__ == '__main__':
     print("🌐 AquaSync Cloud Dashboard 起動中...")
