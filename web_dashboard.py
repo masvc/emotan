@@ -19,7 +19,7 @@ current_data = {
     'character_face': 'normal'
 }
 
-# HTML テンプレート（ビジュアルノベル風・大幅サイズアップ版）
+# HTML テンプレート（ビジュアルノベル風・音声機能付き）
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="ja">
@@ -171,6 +171,7 @@ HTML_TEMPLATE = """
     </style>
     <script>
         let lastUpdateTime = new Date('{{ last_update or "1970-01-01" }}').getTime();
+        let lastFaceType = null; // 前回の状態を記録（音声用）
         
         function refreshData() {
             fetch('/api/data')
@@ -188,13 +189,41 @@ HTML_TEMPLATE = """
                     // 台詞ボックスの更新
                     document.getElementById('dialogue-text').textContent = data.character_message || 'お疲れ様！';
                     
-                    // キャラクター画像のエフェクト更新
+                    // キャラクター画像のエフェクト更新（音声付き）
                     updateCharacterEffect(data.character_face || data.status);
                     
                     // ステータスに応じてクラスを更新
                     const sidebar = document.getElementById('sidebar');
                     sidebar.className = 'sidebar status-' + data.status;
                 });
+        }
+        
+        function playVoice(faceType) {
+            // 状態に応じた音声ファイルを決定
+            let voiceFile = getVoiceFile(faceType);
+            
+            if (voiceFile) {
+                const audio = new Audio(`/voice/${voiceFile}`);
+                audio.volume = 0.7; // 音量調整
+                audio.play().catch(e => console.log('音声再生エラー:', e));
+                console.log(`🎵 音声再生: ${voiceFile}`);
+            }
+        }
+        
+        function getVoiceFile(faceType) {
+            const voiceFiles = {
+                'yousei1': ['ohayo.wav', 'yorosiku.wav'],
+                'yousei2': ['nice.wav'],
+                'yousei4': ['arigatou.wav', 'yatta.wav'],
+                'yousei5': ['kora.wav', 'omizu.wav']
+            };
+            
+            const files = voiceFiles[faceType];
+            if (files && files.length > 0) {
+                // ランダムに選択
+                return files[Math.floor(Math.random() * files.length)];
+            }
+            return null;
         }
         
         function updateCharacterEffect(faceType) {
@@ -225,21 +254,30 @@ HTML_TEMPLATE = """
                 case 'happy':
                     imageSrc = '/img/yousei4.png';
                     characterImg.classList.add('happy');
+                    faceType = 'yousei4'; // 音声用に正規化
                     break;
                 case 'red':
                 case 'sad':
                     imageSrc = '/img/yousei5.png';
                     characterImg.classList.add('sad');
+                    faceType = 'yousei5'; // 音声用に正規化
                     break;
                 default:
                     imageSrc = '/img/yousei1.png';
+                    faceType = 'yousei1'; // 音声用に正規化
                     break;
             }
             
             // 画像を更新
             characterImg.src = imageSrc;
+            
+            // 状態が変わった時だけ音声再生
+            if (lastFaceType !== faceType) {
+                console.log(`🔄 状態変化: ${lastFaceType} → ${faceType}`);
+                playVoice(faceType);
+                lastFaceType = faceType;
+            }
         }
-        
         
         function updateEmotionMark(faceType) {
             const emotionMark = document.getElementById('emotion-mark');
@@ -314,7 +352,6 @@ HTML_TEMPLATE = """
         <img id="character-image" src="/img/yousei1.png" alt="エモたん" class="character-image {{ character_face }}">
     </div>
     
-    
     <!-- 台詞ボックス -->
     <div class="dialogue-container">
         <div class="dialogue-box">
@@ -384,6 +421,15 @@ def serve_image(filename):
     else:
         abort(404)
 
+@app.route('/voice/<filename>')
+def serve_voice(filename):
+    """音声ファイルを配信"""
+    voice_path = os.path.join(os.getcwd(), 'voice', filename)
+    if os.path.exists(voice_path):
+        return send_file(voice_path, mimetype='audio/wav')
+    else:
+        abort(404)
+
 @app.route('/health')
 def health_check():
     """ヘルスチェック用エンドポイント"""
@@ -401,6 +447,7 @@ if __name__ == '__main__':
     print("🔌 API エンドポイント:")
     print("  - GET  /api/data - データ取得")
     print("  - POST /api/update - データ更新（要認証）")
+    print("  - GET  /voice/<filename> - 音声ファイル配信")
     print("  - GET  /health - ヘルスチェック")
     
     # ポート設定（Render等のクラウド環境対応）
