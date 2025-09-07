@@ -152,6 +152,9 @@ HTML_TEMPLATE = """
             overflow-y: auto;
             height: 100%;
             font-weight: bold;
+            margin: 10px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
         }
         .dialogue-name {
             position: absolute;
