@@ -285,8 +285,8 @@ def main():
     last_status = None
     last_report_time = time.time()
     last_cloud_update = time.time()
-    report_interval = 300  # 5分間隔での定期レポート
-    cloud_update_interval = 15  # 15秒間隔でクラウド更新
+    report_interval = 600  # 10分間隔での定期レポート
+    cloud_update_interval = 10  # 10秒間隔でクラウド更新
     
     try:
         arduino = serial.Serial(ARDUINO_PORT, 9600)

@@ -280,8 +280,8 @@ HTML_TEMPLATE = """
             }
         }
         
-        // 15秒ごとに自動更新
-        setInterval(refreshData, 15000);
+        // 10秒ごとに自動更新
+        setInterval(refreshData, 10000);
         
         // ページ読み込み時に1回実行
         window.onload = function() {
