@@ -2,15 +2,18 @@
 
 ## 📋 プロジェクト概要
 
-**AquaSync**は、IoT センサーを使用した水分監視システムです。センサーデータをリアルタイムでクラウドに送信し、妖精キャラクター「えもたん」が可愛く状況を教えてくれる Web ダッシュボードを提供します。
+**AquaSync**は、IoT センサーを使用した水分監視システムです。Arduino センサーから水分データを取得し、リアルタイムでクラウドに送信。妖精キャラクター「えもたん」が可愛く状況を教えてくれる Web ダッシュボードを提供します。
 
 ### 🎯 主な機能
 
-- リアルタイム水分レベル監視
-- 妖精キャラクターによる状況表示
-- クラウドダッシュボード（Render）
-- RESTful API
-- ローカルセンサー制御
+- **リアルタイム水分レベル監視** - Arduino センサーによる水分測定
+- **妖精キャラクター「えもたん」** - 5 種類の表情で状況を表現
+- **音声機能** - 状態変化時の音声再生（ON/OFF 切り替え可能）
+- **LINE 通知** - 水分状態の変化を LINE で通知
+- **AI 生成メッセージ** - Gemini API による自然なキャラクターセリフ
+- **クラウドダッシュボード** - Render 上で稼働する Web アプリ
+- **RESTful API** - データ取得・更新用 API
+- **ローカルセンサー制御** - Arduino とのシリアル通信
 
 ## 🏗️ システム構成
 
@@ -27,27 +30,40 @@
 ### 🔧 技術スタック
 
 - **Backend**: Python Flask + Gunicorn
-- **Frontend**: HTML/CSS/JavaScript (妖精キャラクター)
+- **Frontend**: HTML/CSS/JavaScript (妖精キャラクター + 音声機能)
 - **Cloud**: Render (Web サービス)
-- **IoT**: Python (シリアル通信)
-- **API**: RESTful JSON API
+- **IoT**: Arduino + Python (シリアル通信)
+- **API**: RESTful JSON API + Bearer 認証
+- **AI**: Google Gemini API (キャラクターセリフ生成)
+- **通知**: LINE Messaging API
+- **音声**: WAV 形式音声ファイル配信
 
 ## 📁 ファイル構成
 
 ```
 emotan/
 ├── 📄 web_dashboard.py          # メインのWebアプリケーション
-├── 📄 local_sensor.py           # ローカルセンサー制御
-├── 📄 local_sensor_test.py      # センサーテスト用
+├── 📄 local_sensor.py           # ローカルセンサー制御 + LINE通知
+├── 📄 local_sensor_test.py      # クラウド接続テスト用
+├── 📄 AquaSync.ino              # Arduino水分センサーコード
 ├── 📄 requirements.txt          # Python依存関係
-├── 📄 Procfile                  # Render用起動設定
-├── 📄 .env                      # 環境変数 (ローカル用)
-├── 📄 .gitignore                # Git除外設定
-└── 🖼️ img/                      # 画像リソース
-    ├── back.jpg                 # 背景画像
-    ├── yousei1.png              # 妖精(通常)
-    ├── yousei2.png              # 妖精(警戒)
-    └── yousei4.png              # 妖精(元気)
+├── 📄 readme.md                 # プロジェクト資料
+├── 🖼️ img/                      # 画像リソース
+│   ├── back.jpg                 # 背景画像
+│   ├── yousei1.png              # 妖精(通常)
+│   ├── yousei2.png              # 妖精(警戒)
+│   ├── yousei3.png              # 妖精(追加)
+│   ├── yousei4.png              # 妖精(元気)
+│   └── yousei5.png              # 妖精(怒り)
+├── 🔊 voice/                    # 音声リソース
+│   ├── arigatou.wav             # ありがとう音声
+│   ├── kora.wav                 # こら音声
+│   ├── nice.wav                 # ナイス音声
+│   ├── ohayo.wav                # おはよう音声
+│   ├── omizu.wav                # お水音声
+│   ├── yatta.wav                # やった音声
+│   └── yorosiku.wav             # よろしく音声
+└── 📁 venv/                     # Python仮想環境
 ```
 
 ## 🚀 デプロイ済み環境
@@ -61,10 +77,12 @@ emotan/
 
 ### 📊 主要エンドポイント
 
-- `GET /` - ダッシュボード
+- `GET /` - ダッシュボード（妖精キャラクター表示）
 - `GET /api/data` - センサーデータ取得
-- `POST /api/update` - データ更新 (要認証)
+- `POST /api/update` - データ更新 (Bearer 認証必須)
 - `GET /health` - ヘルスチェック
+- `GET /img/<filename>` - 画像ファイル配信
+- `GET /voice/<filename>` - 音声ファイル配信
 
 ## ⚙️ セットアップ手順
 
@@ -82,20 +100,37 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 # 依存関係インストール
 pip install -r requirements.txt
 
-# 環境変数設定
-cp .env.example .env  # .envファイルを編集
+# 環境変数設定（.envファイルを作成）
+# 以下の環境変数を設定してください：
+# API_SECRET_KEY=your-secret-key
+# CLOUD_API_URL=https://emotan.onrender.com
+# CHANNEL_ACCESS_TOKEN=your-line-token
+# GEMINI_API_KEY=your-gemini-key
+# ARDUINO_PORT=/dev/tty.usbserial-xxxxx
 
 # ローカル実行
 python web_dashboard.py
 ```
 
-### 2. センサー接続 (ローカル側)
+### 2. Arduino セットアップ
 
 ```bash
-# センサーテスト
+# Arduino IDEでAquaSync.inoを開く
+# 必要なライブラリをインストール：
+# - Servo
+# - TM1637Display
+
+# Arduinoにコードをアップロード
+# シリアルモニタで動作確認
+```
+
+### 3. センサー接続 (ローカル側)
+
+```bash
+# クラウド接続テスト
 python local_sensor_test.py
 
-# センサー監視開始
+# センサー監視開始（LINE通知付き）
 python local_sensor.py
 ```
 
@@ -138,11 +173,13 @@ git push origin main  # 自動デプロイされます
 
 ```json
 {
-  "moisture": 75,
+  "raw_value": 450,
+  "percentage": 75,
   "status": "yellow",
-  "last_update": "2025-09-07T04:51:03",
-  "message": "75%でそこそこ元気だよ〜！",
-  "character": "yousei2.png"
+  "last_update": "2025-01-15T12:30:45",
+  "message": "🟡 植物の水分は適度 (12:30)\n💧 水分レベル: 75%\n✅ 良好な状態です",
+  "character_message": "75%でそこそこ元気だよ〜！あなたのおかげだね♪",
+  "character_face": "yousei2"
 }
 ```
 
@@ -154,16 +191,19 @@ git push origin main  # 自動デプロイされます
 
 ```json
 {
-  "moisture": 75,
+  "raw_value": 450,
+  "percentage": 75,
   "status": "yellow",
-  "message": "水分75%でそこそこ元気だよ〜！"
+  "message": "🟡 植物の水分は適度 (12:30)\n💧 水分レベル: 75%\n✅ 良好な状態です",
+  "character_message": "75%でそこそこ元気だよ〜！あなたのおかげだね♪",
+  "character_face": "yousei2"
 }
 ```
 
 **ヘッダー:**
 
 ```
-X-API-Key: your-api-secret-key
+Authorization: Bearer your-api-secret-key
 Content-Type: application/json
 ```
 
@@ -196,11 +236,11 @@ gunicorn --bind 0.0.0.0:$PORT web_dashboard:app
 
 #### 2. API 認証エラー
 
-**症状**: 403 Forbidden
-**解決**: API Key を確認
+**症状**: 401 Unauthorized
+**解決**: Bearer 認証を確認
 
 ```python
-headers = {'X-API-Key': 'your-secret-key'}
+headers = {'Authorization': 'Bearer your-secret-key'}
 ```
 
 #### 3. センサー接続エラー
@@ -225,10 +265,12 @@ ls /dev/tty*  # Mac/Linux
 ### 🔧 技術的改善
 
 - [ ] データベース追加 (PostgreSQL)
-- [ ] 履歴データの保存
+- [ ] 履歴データの保存・グラフ表示
 - [ ] リアルタイム通知 (WebSocket)
 - [ ] モバイルアプリ対応
 - [ ] Docker 化
+- [ ] 複数センサー対応
+- [ ] 自動水やりシステム連携
 
 ### 🎨 UI/UX 改善
 
@@ -236,7 +278,8 @@ ls /dev/tty*  # Mac/Linux
 - [ ] ダークモード
 - [ ] グラフ表示機能
 - [ ] アラート設定
-- [ ] 複数センサー対応
+- [ ] キャラクターアニメーション
+- [ ] 音声設定の永続化
 
 ### 🔒 セキュリティ強化
 
@@ -268,13 +311,15 @@ ls /dev/tty*  # Mac/Linux
 
 ## 📝 更新履歴
 
-| 日付       | バージョン | 変更内容                          |
-| ---------- | ---------- | --------------------------------- |
-| 2025-09-07 | v1.0       | 初回リリース、Render デプロイ完了 |
-| 2025-09-07 | v1.1       | Gunicorn 本番サーバー導入         |
+| 日付       | バージョン | 変更内容                             |
+| ---------- | ---------- | ------------------------------------ |
+| 2025-01-15 | v1.0       | 初回リリース、Render デプロイ完了    |
+| 2025-01-15 | v1.1       | Gunicorn 本番サーバー導入            |
+| 2025-01-15 | v1.2       | 音声機能、LINE 通知、Gemini API 追加 |
+| 2025-01-15 | v1.3       | Arduino 統合、5 種類キャラクター対応 |
 
 ---
 
-**Last Updated**: 2025-09-07  
-**Document Version**: 1.0  
+**Last Updated**: 2025-01-15  
+**Document Version**: 1.3  
 **Project Status**: Production Ready ✅
