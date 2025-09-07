@@ -248,19 +248,41 @@ HTML_TEMPLATE = """
             // クラスをリセット
             characterImg.className = 'character-image';
             
+            // 画像ファイル名に基づいて画像を切り替え
+            let imageSrc = '/img/yousei1.png'; // デフォルト
+            
             switch(faceType) {
+                case 'yousei1':
+                    imageSrc = '/img/yousei1.png';
+                    break;
+                case 'yousei2':
+                    imageSrc = '/img/yousei2.png';
+                    break;
+                case 'yousei4':
+                    imageSrc = '/img/yousei4.png';
+                    characterImg.classList.add('happy');
+                    break;
+                case 'yousei5':
+                    imageSrc = '/img/yousei5.png';
+                    characterImg.classList.add('sad');
+                    break;
                 case 'green':
                 case 'happy':
+                    imageSrc = '/img/yousei4.png';
                     characterImg.classList.add('happy');
                     break;
                 case 'red':
                 case 'sad':
+                    imageSrc = '/img/yousei5.png';
                     characterImg.classList.add('sad');
                     break;
                 default:
-                    // normal - デフォルトスタイル
+                    imageSrc = '/img/yousei1.png';
                     break;
             }
+            
+            // 画像を更新
+            characterImg.src = imageSrc;
         }
         
         function updateConnectionStatusMini(lastUpdate) {
